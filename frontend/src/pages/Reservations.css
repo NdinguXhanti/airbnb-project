@@ -1,0 +1,297 @@
+/* src/pages/Reservations.css */
+
+.reservations-page {
+  min-height: 100vh;
+  background: #F7F7F7;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.25rem;
+}
+
+.user-greeting {
+  color: #717171;
+  font-size: 1rem;
+}
+
+.user-greeting strong {
+  color: #222;
+  font-weight: 600;
+}
+
+/* Dashboard Navigation */
+.dashboard-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #DDD;
+}
+
+.dashboard-nav .nav-item {
+  padding: 0.5rem 1rem;
+  color: #717171;
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.dashboard-nav .nav-item:hover {
+  background: #EBEBEB;
+  color: #222;
+}
+
+.dashboard-nav .nav-item.active {
+  background: #222;
+  color: white;
+}
+
+/* Reservations Card */
+.reservations-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #222;
+}
+
+/* Table Styles */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.reservations-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.reservations-table th {
+  text-align: left;
+  padding: 1rem 0.75rem;
+  color: #717171;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #DDD;
+}
+
+.reservations-table td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #F0F0F0;
+  color: #222;
+  font-size: 0.875rem;
+}
+
+.reservations-table tr:last-child td {
+  border-bottom: none;
+}
+
+.reservations-table tr:hover td {
+  background-color: #F9F9F9;
+}
+
+/* Guest Info */
+.guest-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.guest-icon {
+  color: #FF385C;
+  font-size: 0.875rem;
+}
+
+/* Property Name */
+.property-name {
+  font-weight: 500;
+  color: #222;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.confirmed {
+  background: #E6F3E6;
+  color: #00A699;
+}
+
+.status-badge.pending {
+  background: #FFF4E5;
+  color: #FFB400;
+}
+
+.status-badge.cancelled {
+  background: #FFE5E5;
+  color: #FF385C;
+}
+
+/* Price */
+.price {
+  font-weight: 600;
+  color: #222;
+}
+
+/* Delete Button */
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #FF385C;
+  border: 1px solid #FF385C;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  background: #FFF1F3;
+}
+
+/* Footer Links Section */
+.footer-links-section {
+  margin-top: 3rem;
+  padding-top: 3rem;
+  border-top: 1px solid #DDD;
+}
+
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.footer-column h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column ul li {
+  margin-bottom: 0.75rem;
+}
+
+.footer-column ul li a {
+  color: #717171;
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: color 0.2s;
+}
+
+.footer-column ul li a:hover {
+  color: #222;
+  text-decoration: underline;
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 3rem auto;
+  border: 3px solid #F0F0F0;
+  border-top-color: #FF385C;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .footer-links-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .dashboard-nav {
+    flex-wrap: wrap;
+  }
+
+  .reservations-card {
+    padding: 1.5rem;
+  }
+
+  .footer-links-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .btn-delete span {
+    display: none;
+  }
+
+  .btn-delete {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .reservations-card {
+    padding: 1rem;
+  }
+
+  .reservations-table th,
+  .reservations-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
