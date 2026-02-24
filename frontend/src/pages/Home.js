@@ -44,6 +44,11 @@ const Home = () => {
   const selectLocation = (location) => {
     setSearchParams({ ...searchParams, location });
     setShowLocationDropdown(false);
+    navigate(`/locations?city=${location}`);
+  };
+
+  const handleUserMenuClick = () => {
+    navigate('/login');
   };
 
   const locationOptions = [
@@ -113,7 +118,7 @@ const Home = () => {
             <div className="hero-nav-right">
               <Link to="/admin/create-listing" className="hero-become-host">Become a host</Link>
               <button className="hero-language-btn"><FaGlobe /></button>
-              <div className="hero-user-menu">
+              <div className="hero-user-menu" onClick={handleUserMenuClick}>
                 <FaBars /><FaUserCircle />
               </div>
             </div>
