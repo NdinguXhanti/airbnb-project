@@ -1,4 +1,3 @@
-// src/pages/Reservations.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -22,12 +21,10 @@ const Reservations = () => {
 
   const fetchReservations = async () => {
     try {
-      // Get reservations for this host's properties
       const response = await API.get('/reservations/host');
       setReservations(response.data);
     } catch (error) {
       console.error('Error fetching reservations:', error);
-      // Fallback data matching the screenshot
       setReservations(fallbackReservations);
     } finally {
       setLoading(false);
@@ -47,7 +44,6 @@ const Reservations = () => {
     }
   };
 
-  // Fallback data matching the screenshot
   const fallbackReservations = [
     {
       _id: '1',
@@ -91,7 +87,6 @@ const Reservations = () => {
   return (
     <div className="reservations-page">
       <div className="container">
-        {/* Header */}
         <div className="page-header">
           <div>
             <h1>My Reservations</h1>
@@ -101,7 +96,6 @@ const Reservations = () => {
           </div>
         </div>
 
-        {/* Dashboard Navigation */}
         <div className="dashboard-nav">
           <Link to="/reservations" className="nav-item active">
             View Reservations
@@ -114,7 +108,6 @@ const Reservations = () => {
           </Link>
         </div>
 
-        {/* Reservations Table */}
         <div className="reservations-card">
           <h2 className="section-title">My Reservations</h2>
           
@@ -153,7 +146,7 @@ const Reservations = () => {
                       </span>
                     </td>
                     <td>
-                      <span className="price">${reservation.totalPrice}</span>
+                      <span className="price">R{reservation.totalPrice}</span>
                     </td>
                     <td>
                       <button
@@ -168,60 +161,6 @@ const Reservations = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* Footer Links - Exactly as in screenshot */}
-        <div className="footer-links-section">
-          <div className="footer-links-grid">
-            {/* Support Column */}
-            <div className="footer-column">
-              <h4>Support</h4>
-              <ul>
-                <li><Link to="/help">Help Center</Link></li>
-                <li><Link to="/safety">Safety information</Link></li>
-                <li><Link to="/cancellation">Cancellation options</Link></li>
-                <li><Link to="/covid">Our COVID-19 Response</Link></li>
-                <li><Link to="/accessibility">Supporting people with disabilities</Link></li>
-                <li><Link to="/report">Report a neighborhood concern</Link></li>
-              </ul>
-            </div>
-
-            {/* Community Column */}
-            <div className="footer-column">
-              <h4>Community</h4>
-              <ul>
-                <li><Link to="/airbnb-org">Airbnb.org: disaster relief housing</Link></li>
-                <li><Link to="/afghan-refugees">Support: Afghan refugees</Link></li>
-                <li><Link to="/diversity">Celebrating diversity & belonging</Link></li>
-                <li><Link to="/discrimination">Combating discrimination</Link></li>
-              </ul>
-            </div>
-
-            {/* Hosting Column */}
-            <div className="footer-column">
-              <h4>Hosting</h4>
-              <ul>
-                <li><Link to="/try-hosting">Try hosting</Link></li>
-                <li><Link to="/aircover">AirCover: protection for Hosts</Link></li>
-                <li><Link to="/hosting-resources">Explore hosting resources</Link></li>
-                <li><Link to="/community-forum">Visit our community forum</Link></li>
-                <li><Link to="/host-responsibly">How to host responsibly</Link></li>
-              </ul>
-            </div>
-
-            {/* About Column */}
-            <div className="footer-column">
-              <h4>About</h4>
-              <ul>
-                <li><Link to="/newsroom">Newsroom</Link></li>
-                <li><Link to="/new-features">Learn about new features</Link></li>
-                <li><Link to="/founders">Letter from our founders</Link></li>
-                <li><Link to="/careers">Careers</Link></li>
-                <li><Link to="/investors">Investors</Link></li>
-                <li><Link to="/airbnb-luxe">Airbnb Luxe</Link></li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
