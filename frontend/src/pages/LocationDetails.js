@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  FaStar, FaMapMarkerAlt, FaBed, FaBath, FaUserFriends, 
+  FaStar, FaMapMarkerAlt, FaBed, FaBath, FaUsers, 
   FaWifi, FaCar, FaTv, FaSnowflake, FaFire, FaUtensils, 
   FaSwimmingPool, FaHome, FaShieldAlt, FaKey, FaCalendar, 
-  FaCheck, FaCamera, FaBicycle, FaCalendarAlt, FaUser, 
-  FaChevronRight, FaFilter, FaHeart, FaArrowLeft
+  FaCheck, FaCamera, FaBicycle, FaCalendarAlt, 
+  FaChevronRight, FaHeart, FaArrowLeft
 } from 'react-icons/fa';
-import { fetchListingById } from '../utils/listingService';
+import API from '../utils/api';
+import { listings as mockListings, getListingById } from '../data/Listings';
 import './LocationDetails.css';
 
 const LocationDetails = () => {
@@ -27,30 +28,40 @@ const LocationDetails = () => {
   }, [id]);
 
   const fetchListing = async () => {
+    setLoading(true);
     try {
-      const response = await fetchListingById(id);
+      const response = await API.get(`/accommodations/${id}`);
       setListing(response.data);
     } catch (error) {
-      console.error('Error fetching listing:', error);
+      console.error('Error fetching listing from API:', error);
+      const mockListing = getListingById(parseInt(id));
+      setListing(mockListing || null);
     } finally {
       setLoading(false);
     }
   };
 
   const calculateTotal = () => {
-    if (!listing || !reservation.checkIn || !reservation.checkOut) {
-      return { nights: 7, total: (listing?.price * 7) + 80 };
+    if (!listing) return { nights: 0, total: 0, cleaningFee: 0, serviceFee: 0 };
+    
+    if (!reservation.checkIn || !reservation.checkOut) {
+      return { 
+        nights: 7, 
+        total: (listing.price * 7) + 80, 
+        cleaningFee: 50, 
+        serviceFee: 30 
+      };
     }
     
     const checkInDate = new Date(reservation.checkIn);
     const checkOutDate = new Date(reservation.checkOut);
     const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
     
-    const total = listing.price * nights;
-    const cleaningFee = 50;
-    const serviceFee = 30;
+    const cleaningFee = listing.cleaningFee || 50;
+    const serviceFee = listing.serviceFee || 30;
+    const total = (listing.price * nights) + cleaningFee + serviceFee;
     
-    return { nights, total: total + cleaningFee + serviceFee, cleaningFee, serviceFee };
+    return { nights, total, cleaningFee, serviceFee };
   };
 
   const handleReservationChange = (e) => {
@@ -75,7 +86,7 @@ const LocationDetails = () => {
   };
 
   const getAmenityIcon = (amenity) => {
-    const amenityLower = amenity.toLowerCase();
+    const amenityLower = amenity?.toLowerCase() || '';
     switch (amenityLower) {
       case 'wifi': return <FaWifi />;
       case 'parking': return <FaCar />;
@@ -95,6 +106,7 @@ const LocationDetails = () => {
   };
 
   const formatPrice = (price) => {
+    if (!price) return 'R 0';
     return `R ${price.toLocaleString()}`;
   };
 
@@ -122,6 +134,9 @@ const LocationDetails = () => {
 
   const { nights, total, cleaningFee, serviceFee } = calculateTotal();
 
+  const mainImage = listing.images?.[0] || listing.image || 'https://source.unsplash.com/random/800x600?hotel';
+  const otherImages = listing.images?.slice(1, 5) || [];
+
   return (
     <div className="airbnb-listing-details">
       <div className="back-button-container">
@@ -136,13 +151,13 @@ const LocationDetails = () => {
           <div className="rating-location">
             <div className="rating">
               <FaStar className="star-icon" />
-              <span className="rating-value">{listing.rating}</span>
-              <span className="reviews-count">· {listing.reviews} reviews</span>
+              <span className="rating-value">{listing.rating || 4.5}</span>
+              <span className="reviews-count">· {listing.reviews || 0} reviews</span>
               <span className="superhost-badge">Superhost</span>
             </div>
             <div className="location">
               <FaMapMarkerAlt className="location-icon" />
-              <span>{listing.city}, {listing.country}</span>
+              <span>{listing.city || listing.location}, {listing.country || ''}</span>
             </div>
           </div>
           <div className="header-actions">
@@ -159,14 +174,23 @@ const LocationDetails = () => {
 
       <div className="image-gallery-section">
         <div className="main-gallery-image">
-          <img src={listing.image} alt={listing.title} />
+          <img src={mainImage} alt={listing.title} />
         </div>
         <div className="gallery-thumbnails">
-          {[1, 2, 3, 4].map((index) => (
-            <div key={index} className="thumbnail">
-              <img src={`https://source.unsplash.com/random/400x300?interior&sig=${index}`} alt={`Interior ${index}`} />
-            </div>
-          ))}
+          {otherImages.length > 0 ? (
+            otherImages.slice(0, 4).map((img, index) => (
+              <div key={index} className="thumbnail">
+                <img src={img} alt={`${listing.title} ${index + 2}`} />
+              </div>
+            ))
+          ) : (
+            // Fallback if no additional images
+            [1, 2, 3, 4].map((i) => (
+              <div key={i} className="thumbnail">
+                <img src={mainImage} alt={`${listing.title} view ${i}`} />
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -174,9 +198,9 @@ const LocationDetails = () => {
         <div className="left-content-column">
           <div className="host-info-section">
             <div className="host-info-content">
-              <h2>Entire rental unit hosted by {listing.host}</h2>
+              <h2>{listing.type || 'Entire rental unit'} hosted by {listing.host || 'Host'}</h2>
               <div className="host-details">
-                <span>{listing.bedrooms} bedroom · {listing.bedrooms} bed · {listing.bathrooms} bath</span>
+                <span>{listing.bedrooms} bedrooms · {listing.bedrooms} beds · {listing.bathrooms} baths</span>
               </div>
             </div>
             <div className="host-avatar">
@@ -224,37 +248,26 @@ const LocationDetails = () => {
           <div className="amenities-section">
             <h3>What this place offers</h3>
             <div className="amenities-grid">
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaWifi /></span>
-                <span className="amenity-text">Wifi</span>
-              </div>
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaCar /></span>
-                <span className="amenity-text">Free parking</span>
-              </div>
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaTv /></span>
-                <span className="amenity-text">TV</span>
-              </div>
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaSnowflake /></span>
-                <span className="amenity-text">Air conditioning</span>
-              </div>
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaFire /></span>
-                <span className="amenity-text">Heating</span>
-              </div>
-              <div className="amenity-item">
-                <span className="amenity-icon"><FaUtensils /></span>
-                <span className="amenity-text">Kitchen</span>
-              </div>
+              {listing.amenities?.slice(0, 6).map((amenity, index) => (
+                <div key={index} className="amenity-item">
+                  <span className="amenity-icon">{getAmenityIcon(amenity)}</span>
+                  <span className="amenity-text">{amenity}</span>
+                </div>
+              ))}
+              {!listing.amenities && (
+                <>
+                  <div className="amenity-item"><span className="amenity-icon"><FaWifi /></span><span>Wifi</span></div>
+                  <div className="amenity-item"><span className="amenity-icon"><FaCar /></span><span>Free parking</span></div>
+                  <div className="amenity-item"><span className="amenity-icon"><FaTv /></span><span>TV</span></div>
+                </>
+              )}
             </div>
           </div>
 
           <div className="reviews-section">
             <div className="reviews-header">
               <FaStar className="star-icon" />
-              <h3>{listing.rating} · {listing.reviews} reviews</h3>
+              <h3>{listing.rating || 4.5} · {listing.reviews || 0} reviews</h3>
             </div>
           </div>
         </div>

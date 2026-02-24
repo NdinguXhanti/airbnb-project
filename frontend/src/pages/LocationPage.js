@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaSearch, FaStar, FaMapMarkerAlt, FaFilter } from 'react-icons/fa';
-import { fetchListings } from '../utils/listingService';
+import API from '../utils/api';
+import { listings as mockListings } from '../data/Listings';
 import './LocationPage.css';
 
 const LocationPage = () => {
@@ -21,25 +22,65 @@ const LocationPage = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    if (cityParam) {
+      setSearch(cityParam);
+    }
+  }, [cityParam]);
+
+  useEffect(() => {
     fetchListings();
-  }, []);
+  }, [search, filters]);
 
   const fetchListings = async () => {
+    setLoading(true);
     try {
-      const params = {};
-      if (search) params.location = search;
-      if (filters.minPrice) params.minPrice = filters.minPrice;
-      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
-      if (filters.bedrooms) params.bedrooms = filters.bedrooms;
-      if (filters.guests) params.guests = filters.guests;
+      const params = new URLSearchParams();
+      if (search) params.append('location', search);
+      if (filters.minPrice) params.append('minPrice', filters.minPrice);
+      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+      if (filters.bedrooms) params.append('bedrooms', filters.bedrooms);
+      if (filters.guests) params.append('guests', filters.guests);
 
-      const response = await fetchListings(params);
-      setListings(response.data);
+      const response = await API.get(`/accommodations?${params.toString()}`);
+      
+      if (response.data && response.data.length > 0) {
+        setListings(response.data);
+      } else {
+        filterMockData();
+      }
     } catch (error) {
       console.error('Error fetching listings:', error);
+      filterMockData();
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterMockData = () => {
+    let filtered = [...mockListings];
+    
+    if (search) {
+      filtered = filtered.filter(listing => 
+        listing.city.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    if (filters.minPrice) {
+      filtered = filtered.filter(listing => listing.price >= parseInt(filters.minPrice));
+    }
+    if (filters.maxPrice) {
+      filtered = filtered.filter(listing => listing.price <= parseInt(filters.maxPrice));
+    }
+    
+    if (filters.bedrooms) {
+      filtered = filtered.filter(listing => listing.bedrooms >= parseInt(filters.bedrooms));
+    }
+    
+    if (filters.guests) {
+      filtered = filtered.filter(listing => listing.guests >= parseInt(filters.guests));
+    }
+    
+    setListings(filtered);
   };
 
   const handleFilterChange = (e) => {
@@ -49,20 +90,27 @@ const LocationPage = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setLoading(true);
-    fetchListings();
   };
 
   const clearFilters = () => {
     setFilters({ minPrice: '', maxPrice: '', bedrooms: '', guests: '' });
     setSearch('');
-    setLoading(true);
-    fetchListings();
   };
 
   const formatPrice = (price) => {
+    if (!price) return 'R 0';
     return `R ${price.toLocaleString()}`;
   };
+
+  if (loading) {
+    return (
+      <div className="location-page">
+        <div className="container">
+          <div className="spinner"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="location-page">
@@ -133,22 +181,16 @@ const LocationPage = () => {
                 <button type="button" className="btn btn-secondary" onClick={clearFilters}>
                   Clear Filters
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleSearch}>
-                  Apply Filters
-                </button>
               </div>
             </div>
           )}
         </div>
 
         <div className="results-header">
-          <h2>{listings.length} properties found</h2>
-          <p>Explore our selection of accommodations</p>
+          <h2>{listings.length} properties found {search && `in ${search}`}</h2>
         </div>
 
-        {loading ? (
-          <div className="spinner"></div>
-        ) : listings.length === 0 ? (
+        {listings.length === 0 ? (
           <div className="empty-state">
             <h3>No properties found</h3>
             <p>Try adjusting your search or filters</p>
@@ -158,35 +200,43 @@ const LocationPage = () => {
           </div>
         ) : (
           <div className="listings-grid">
-            {listings.map((listing) => (
-              <Link to={`/location/${listing.id}`} key={listing.id} className="listing-card">
-                <div className="listing-image">
-                  <img src={listing.image} alt={listing.title} />
-                  <div className="listing-price">{formatPrice(listing.price)}<small>/night</small></div>
-                </div>
-                <div className="listing-content">
-                  <div className="listing-header">
-                    <h3>{listing.title}</h3>
-                    <div className="listing-rating">
-                      <FaStar size={14} color="#FF385C" />
-                      <span>{listing.rating}</span>
+            {listings.map((listing) => {
+              const listingId = listing._id || listing.id;
+              const listingImage = listing.images?.[0] || listing.image || 'https://source.unsplash.com/random/400x300?hotel';
+              const listingCity = listing.city || listing.location || '';
+              const listingCountry = listing.country || '';
+              const listingGuests = listing.guests || listing.maxGuests || 2;
+              
+              return (
+                <Link to={`/location/${listingId}`} key={listingId} className="listing-card">
+                  <div className="listing-image">
+                    <img src={listingImage} alt={listing.title} />
+                    <div className="listing-price">{formatPrice(listing.price)}<small>/night</small></div>
+                  </div>
+                  <div className="listing-content">
+                    <div className="listing-header">
+                      <h3>{listing.title}</h3>
+                      <div className="listing-rating">
+                        <FaStar size={14} color="#FF385C" />
+                        <span>{listing.rating || 4.5}</span>
+                      </div>
+                    </div>
+                    <p className="listing-location">
+                      <FaMapMarkerAlt size={12} />
+                      {listingCity}{listingCountry ? `, ${listingCountry}` : ''}
+                    </p>
+                    <p className="listing-description">{listing.description}</p>
+                    <div className="listing-details">
+                      <span>{listing.bedrooms} bedrooms</span>
+                      <span>•</span>
+                      <span>{listing.bathrooms} bathrooms</span>
+                      <span>•</span>
+                      <span>{listingGuests} guests</span>
                     </div>
                   </div>
-                  <p className="listing-location">
-                    <FaMapMarkerAlt size={12} />
-                    {listing.city}, {listing.country}
-                  </p>
-                  <p className="listing-description">{listing.description.substring(0, 80)}...</p>
-                  <div className="listing-details">
-                    <span>{listing.bedrooms} bd</span>
-                    <span>•</span>
-                    <span>{listing.bathrooms} ba</span>
-                    <span>•</span>
-                    <span>{listing.guests} guests</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

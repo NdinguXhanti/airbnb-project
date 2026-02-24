@@ -15,6 +15,19 @@ import LocationDetails from './pages/LocationDetails';
 import Reservations from './pages/Reservations';
 import { AuthProvider } from './context/AuthContext';
 
+console.log('Header type:', typeof Header);
+console.log('Footer type:', typeof Footer);
+console.log('Home type:', typeof Home);
+console.log('Login type:', typeof Login);
+console.log('Register type:', typeof Register);
+console.log('LocationPage type:', typeof LocationPage);
+console.log('LocationDetails type:', typeof LocationDetails);
+console.log('Reservations type:', typeof Reservations);
+console.log('AdminDashboard type:', typeof AdminDashboard);
+console.log('CreateListing type:', typeof CreateListing);
+console.log('ViewListings type:', typeof ViewListings);
+console.log('UpdateListing type:', typeof UpdateListing);
+
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   return token ? children : <Navigate to="/login" />;

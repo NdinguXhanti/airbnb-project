@@ -1,4 +1,3 @@
-// src/pages/ViewListings.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -8,6 +7,7 @@ import {
   FaStar, FaImage
 } from 'react-icons/fa';
 import API from '../utils/api';
+import { listings as mockListings } from '../data/Listings';
 import './ViewListings.css';
 
 const ViewListings = () => {
@@ -15,6 +15,7 @@ const ViewListings = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [useMockData, setUseMockData] = useState(false);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -24,16 +25,19 @@ const ViewListings = () => {
 
   const fetchHostListings = async () => {
     try {
-      // Get all listings (you can filter by host ID on backend)
       const response = await API.get('/accommodations');
       
-      // For demo, show first few listings
-      // In production, your backend should filter by host ID
-      setListings(response.data.slice(0, 2));
+      if (response.data && response.data.length > 0) {
+        setListings(response.data);
+        setUseMockData(false);
+      } else {
+        setListings(mockListings || []);
+        setUseMockData(true);
+      }
     } catch (error) {
       console.error('Error fetching listings:', error);
-      // Fallback data that matches the screenshot
-      setListings(fallbackListings);
+      setListings(mockListings || []);
+      setUseMockData(true);
     } finally {
       setLoading(false);
     }
@@ -42,9 +46,14 @@ const ViewListings = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this listing?')) {
       try {
-        await API.delete(`/accommodations/${id}`);
-        setListings(listings.filter(listing => listing._id !== id));
-        alert('Listing deleted successfully');
+        if (useMockData) {
+          setListings(listings.filter(listing => listing.id !== id));
+          alert('Listing deleted (demo mode)');
+        } else {
+          await API.delete(`/accommodations/${id}`);
+          setListings(listings.filter(listing => listing._id !== id));
+          alert('Listing deleted successfully');
+        }
       } catch (error) {
         console.error('Error deleting listing:', error);
         alert('Failed to delete listing');
@@ -52,40 +61,12 @@ const ViewListings = () => {
     }
   };
 
-  // Fallback data matching the screenshot
-  const fallbackListings = [
-    {
-      _id: '1',
-      title: '3 Room Bedroom',
-      location: 'Sandton City Hotel',
-      description: 'Luxurious suite in the heart of Sandton',
-      price: 325,
-      bedrooms: 3,
-      bathrooms: 3,
-      maxGuests: 6,
-      propertyType: 'Entire Home',
-      bedCount: 5,
-      amenities: ['Wifi', 'Kitchen', 'Free Parking'],
-      images: ['https://source.unsplash.com/random/800x600?sandton-hotel'],
-      status: 'active'
-    },
-    {
-      _id: '2',
-      title: 'Entire home in Bordeaux',
-      location: 'Woodmead City Hotel',
-      description: 'Elegant apartment with city views',
-      price: 125,
-      bedrooms: 2,
-      bathrooms: 2,
-      maxGuests: 4,
-      propertyType: 'Entire Home',
-      bedCount: 3,
-      amenities: ['Wifi', 'Kitchen', 'Free Parking'],
-      images: ['https://source.unsplash.com/random/800x600?woodmead-hotel'],
-      status: 'active'
-    }
-  ];
+  const formatPrice = (price) => {
+    if (!price) return 'R 0';
+    return `R ${price.toLocaleString()}`;
+  };
 
+  // Don't render anything while loading
   if (loading) {
     return (
       <div className="host-listings-page">
@@ -96,10 +77,12 @@ const ViewListings = () => {
     );
   }
 
+  // Ensure listings is always an array
+  const safeListings = listings || [];
+
   return (
     <div className="host-listings-page">
       <div className="container">
-        {/* Header with User Info */}
         <div className="page-header">
           <div className="header-left">
             <h1>My Hotel List</h1>
@@ -108,14 +91,12 @@ const ViewListings = () => {
             </p>
           </div>
           
-          {/* Create Listing Button */}
           <Link to="/admin/create-listing" className="btn-create">
             <FaPlus />
             <span>Create New Listing</span>
           </Link>
         </div>
 
-        {/* Dashboard Navigation */}
         <div className="dashboard-nav">
           <Link to="/reservations" className="nav-item">
             View Reservations
@@ -128,8 +109,13 @@ const ViewListings = () => {
           </Link>
         </div>
 
-        {/* Listings Grid */}
-        {listings.length === 0 ? (
+        {useMockData && (
+          <div className="demo-banner">
+            <p>📋 Showing {safeListings.length} sample listings from your Listings.js file</p>
+          </div>
+        )}
+
+        {safeListings.length === 0 ? (
           <div className="empty-state">
             <FaHome size={48} />
             <h3>No listings yet</h3>
@@ -140,104 +126,137 @@ const ViewListings = () => {
           </div>
         ) : (
           <div className="listings-container">
-            <h2 className="section-title">My Hotel List</h2>
+            <h2 className="section-title">My Hotel List ({safeListings.length} properties)</h2>
             
             <div className="listings-grid-horizontal">
-              {listings.map((listing) => (
-                <div key={listing._id} className="listing-card-horizontal">
-                  {/* Listing Image */}
-                  <div className="listing-image">
-                    <img 
-                      src={listing.images[0] || 'https://source.unsplash.com/random/400x300?hotel'} 
-                      alt={listing.title} 
-                    />
-                    {listing.status === 'active' && (
+              {safeListings.map((listing) => {
+                // Safely access listing properties with defaults
+                const listingId = listing?._id || listing?.id;
+                const listingTitle = listing?.title || 'Untitled';
+                const listingCity = listing?.city || listing?.location || 'Unknown';
+                const listingCountry = listing?.country || '';
+                const listingPrice = listing?.price || 0;
+                const listingRating = listing?.rating || 4.5;
+                const listingReviews = listing?.reviews || 0;
+                const listingGuests = listing?.guests || listing?.maxGuests || 2;
+                const listingBedrooms = listing?.bedrooms || 1;
+                const listingBathrooms = listing?.bathrooms || 1;
+                const listingType = listing?.type || 'Entire Home';
+                const listingDescription = listing?.description || '';
+                const listingAmenities = listing?.amenities || [];
+                const listingImage = listing?.images?.[0] || listing?.image || 'https://source.unsplash.com/random/400x300?hotel';
+
+                return (
+                  <div key={listingId || Math.random()} className="listing-card-horizontal">
+                    <div className="listing-image">
+                      <img src={listingImage} alt={listingTitle} />
                       <span className="status-badge active">Active</span>
-                    )}
-                  </div>
-
-                  {/* Listing Details */}
-                  <div className="listing-details">
-                    <div className="listing-header">
-                      <div>
-                        <h3 className="listing-title">{listing.title}</h3>
-                        <p className="listing-location">
-                          <FaMapMarkerAlt /> {listing.location}
-                        </p>
-                      </div>
-                      <div className="listing-price">
-                        <span className="price">${listing.price}</span>
-                        <span className="per-night">/night</span>
-                      </div>
                     </div>
 
-                    <div className="listing-specs">
-                      <span className="spec">
-                        <FaUsers /> {listing.maxGuests || 4}-{listing.maxGuests + 2 || 6} guests
-                      </span>
-                      <span className="spec">
-                        <FaHome /> {listing.propertyType || 'Entire Home'}
-                      </span>
-                      <span className="spec">
-                        <FaBed /> {listing.bedCount || 5} beds
-                      </span>
-                      <span className="spec">
-                        <FaBath /> {listing.bathrooms || 3} bath
-                      </span>
-                    </div>
+                    <div className="listing-details">
+                      <div className="listing-header">
+                        <div>
+                          <h3 className="listing-title">{listingTitle}</h3>
+                          <p className="listing-location">
+                            <FaMapMarkerAlt /> {listingCity}{listingCountry ? `, ${listingCountry}` : ''}
+                          </p>
+                        </div>
+                        <div className="listing-rating">
+                          <FaStar className="star-icon" />
+                          <span>{listingRating}</span>
+                          <span className="reviews-count">({listingReviews})</span>
+                        </div>
+                      </div>
 
-                    {/* Amenities */}
-                    <div className="listing-amenities">
-                      {listing.amenities?.map((amenity, index) => (
-                        <span key={index} className="amenity-tag">
-                          {amenity}
+                      <div className="listing-specs">
+                        <span className="spec">
+                          <FaUsers /> {listingGuests} guests
                         </span>
-                      ))}
-                    </div>
+                        <span className="spec">
+                          <FaHome /> {listingType}
+                        </span>
+                        <span className="spec">
+                          <FaBed /> {listingBedrooms} bedrooms
+                        </span>
+                        <span className="spec">
+                          <FaBath /> {listingBathrooms} baths
+                        </span>
+                      </div>
 
-                    {/* Action Buttons */}
-                    <div className="listing-actions">
-                      <Link 
-                        to={`/admin/update-listing/${listing._id}`} 
-                        className="btn-update"
-                      >
-                        <FaEdit />
-                        <span>Update</span>
-                      </Link>
-                      <button 
-                        onClick={() => handleDelete(listing._id)} 
-                        className="btn-delete"
-                      >
-                        <FaTrash />
-                        <span>Delete</span>
-                      </button>
+                      {listingDescription && (
+                        <p className="listing-description">
+                          {listingDescription.substring(0, 100)}...
+                        </p>
+                      )}
+
+                      {listingAmenities.length > 0 && (
+                        <div className="listing-amenities">
+                          {listingAmenities.slice(0, 3).map((amenity, index) => (
+                            <span key={index} className="amenity-tag">
+                              {amenity}
+                            </span>
+                          ))}
+                          {listingAmenities.length > 3 && (
+                            <span className="amenity-tag">+{listingAmenities.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="listing-footer">
+                        <div className="listing-price">
+                          <span className="price">{formatPrice(listingPrice)}</span>
+                          <span className="per-night">/night</span>
+                        </div>
+                        
+                        <div className="listing-actions">
+                          <Link 
+                            to={`/admin/update-listing/${listingId}`} 
+                            className="btn-update"
+                          >
+                            <FaEdit />
+                            <span>Update</span>
+                          </Link>
+                          <button 
+                            onClick={() => handleDelete(listingId)} 
+                            className="btn-delete"
+                          >
+                            <FaTrash />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Quick Stats */}
         <div className="quick-stats">
           <div className="stat-card">
             <h4>Total Listings</h4>
-            <p className="stat-number">{listings.length}</p>
+            <p className="stat-number">{safeListings.length}</p>
           </div>
           <div className="stat-card">
             <h4>Active Listings</h4>
+            <p className="stat-number">{safeListings.length}</p>
+          </div>
+          <div className="stat-card">
+            <h4>Avg Rating</h4>
             <p className="stat-number">
-              {listings.filter(l => l.status === 'active').length}
+              {safeListings.length > 0 
+                ? (safeListings.reduce((acc, curr) => acc + (curr.rating || 4.5), 0) / safeListings.length).toFixed(1)
+                : '0.0'}
             </p>
           </div>
           <div className="stat-card">
-            <h4>Total Bookings</h4>
-            <p className="stat-number">24</p>
-          </div>
-          <div className="stat-card">
-            <h4>Revenue</h4>
-            <p className="stat-number">$3,450</p>
+            <h4>Avg Price</h4>
+            <p className="stat-number">
+              {safeListings.length > 0
+                ? `R ${Math.round(safeListings.reduce((acc, curr) => acc + (curr.price || 0), 0) / safeListings.length).toLocaleString()}`
+                : 'R 0'}
+            </p>
           </div>
         </div>
       </div>
